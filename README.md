@@ -44,12 +44,15 @@ Dein Instagram Account muss ein **Business** oder **Creator** Account sein.
    - **Data Deletion Request URL**: (leer lassen)
 3. **Save Changes**
 
-### 5. App ID und Secret notieren
+### 5. Instagram App ID und Secret notieren
 
-1. In der App: Linke Sidebar -> **App Settings** -> **Basic**
-2. Kopiere:
-   - **App ID** (öffentlich sichtbar)
-   - **App Secret** (auf "Show" klicken, Passwort eingeben)
+**WICHTIG:** Du brauchst die **Instagram App ID**, NICHT die Facebook App ID!
+
+1. In der App: **Instagram API with Instagram Login** -> **API setup with Instagram Login**
+2. Dort findest du:
+   - **Instagram App ID** (unterscheidet sich von der Facebook App ID!)
+   - **Instagram App Secret**
+3. Kopiere beide Werte
 
 ### 6. instacli auth setup
 

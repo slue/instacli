@@ -10,9 +10,9 @@ import {
 import { loadConfig, saveConfig, configExists, Config } from "../lib/config";
 import { error, success, info, daysUntil, formatDate } from "../lib/utils";
 
-const REDIRECT_URI = "https://localhost";
+const REDIRECT_URI = "https://localhost/";
 const SCOPES =
-  "instagram_business_basic,instagram_business_content_publish,instagram_business_manage_messages";
+  "instagram_business_basic,instagram_business_content_publish";
 
 export function registerAuthCommands(program: Command): void {
   const auth = program.command("auth").description("Authentication management");
@@ -32,7 +32,7 @@ export function registerAuthCommands(program: Command): void {
         error("App ID and App Secret are required.");
       }
 
-      const authUrl = `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=${appId}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${SCOPES}`;
+      const authUrl = `https://www.instagram.com/oauth/authorize?client_id=${appId}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${SCOPES}`;
 
       console.log(`\n${chalk.bold("Step 1:")} Open this URL in your browser:\n`);
       console.log(chalk.underline(authUrl));
@@ -87,6 +87,55 @@ export function registerAuthCommands(program: Command): void {
       saveConfig(config);
       success(`\nAuthenticated as @${me.username} (${me.user_id})`);
       success("Config saved to ~/.instacli/config.json");
+    });
+
+  auth
+    .command("token")
+    .description("Manually set a token (from Meta Developer Console)")
+    .action(async () => {
+      console.log(chalk.bold("\n🔑 Manual Token Setup\n"));
+      console.log("Generate a token in the Meta Developer Console:");
+      console.log("Instagram API with Instagram Login → Generate token\n");
+
+      const appId = readlineSync.question("Enter your Instagram App ID: ");
+      const appSecret = readlineSync.question("Enter your Instagram App Secret: ", { mask: "*" });
+      const token = readlineSync.question("Paste the generated token: ");
+
+      if (!appId || !appSecret || !token) {
+        error("All fields are required.");
+      }
+
+      info("\nFetching account info...");
+      const tempConfig: Config = {
+        app_id: appId,
+        app_secret: appSecret,
+        access_token: token,
+        ig_user_id: "",
+        token_expires_at: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+
+      try {
+        const me = await getMe(tempConfig, "user_id,username");
+
+        // Try to exchange for long-lived token
+        info("Exchanging for long-lived token...");
+        try {
+          const longLived = await exchangeForLongLivedToken(appSecret, token);
+          const expiresAt = new Date(Date.now() + longLived.expires_in * 1000).toISOString();
+          tempConfig.access_token = longLived.access_token;
+          tempConfig.token_expires_at = expiresAt;
+          success("Got long-lived token (60 days)!");
+        } catch {
+          info("Could not exchange for long-lived token. Using provided token as-is.");
+        }
+
+        tempConfig.ig_user_id = me.user_id;
+        saveConfig(tempConfig);
+        success(`\nAuthenticated as @${me.username} (${me.user_id})`);
+        success("Config saved to ~/.instacli/config.json");
+      } catch (e: any) {
+        error(`Failed to verify token: ${e.message}`);
+      }
     });
 
   auth
