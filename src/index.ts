@@ -6,6 +6,7 @@ import { registerPostCommands } from "./commands/post";
 import { registerStoryCommands } from "./commands/story";
 import { registerMediaCommands } from "./commands/media";
 import { registerMeCommand } from "./commands/me";
+import { registerDmCommands } from "./commands/dm";
 
 const program = new Command();
 
@@ -19,6 +20,7 @@ registerPostCommands(program);
 registerStoryCommands(program);
 registerMediaCommands(program);
 registerMeCommand(program);
+registerDmCommands(program);
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(err.message);

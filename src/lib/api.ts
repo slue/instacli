@@ -137,6 +137,27 @@ export async function deleteMedia(
   return request(url, { method: "DELETE" });
 }
 
+// DM / Messaging endpoints
+
+export async function getConversations(config: Config, limit = 20): Promise<any> {
+  const url = `${API_BASE}/${config.ig_user_id}/conversations?platform=instagram&fields=participants,messages.limit(1){message,from,timestamp}&limit=${limit}&access_token=${encodeURIComponent(config.access_token)}`;
+  return request(url);
+}
+
+export async function getMessages(config: Config, conversationId: string): Promise<any> {
+  const url = `${API_BASE}/${conversationId}?fields=messages{message,from,timestamp}&access_token=${encodeURIComponent(config.access_token)}`;
+  return request(url);
+}
+
+export async function sendMessage(config: Config, recipientId: string, text: string): Promise<any> {
+  const url = `${API_BASE}/${config.ig_user_id}/messages`;
+  const body = new URLSearchParams();
+  body.append("recipient", JSON.stringify({ id: recipientId }));
+  body.append("message", JSON.stringify({ text }));
+  body.append("access_token", config.access_token);
+  return request(url, { method: "POST", body });
+}
+
 // Polling helper
 
 export async function pollContainerStatus(
