@@ -22,11 +22,10 @@ Dein Instagram Account muss ein **Business** oder **Creator** Account sein.
 4. App einem **Business Portfolio** zuordnen (Pflicht für Unified Login)
 5. **App name**: z.B. `instacli` -> **Create App**
 
-> instacli unterstützt zwei Login-Varianten. Neue Meta Apps bekommen nur noch **Unified Login**
-> (empfohlen). **Instagram Login** ist bei Meta "legacy" und nur für bestehende Apps relevant.
-> Details & Vergleich: [docs/authentication.md](docs/authentication.md)
+> instacli nutzt standardmäßig Metas **Unified Login**. Das alte **Instagram Login** ist bei Meta "legacy"
+> und nur noch über `--legacy` erreichbar. Details & Vergleich: [docs/authentication.md](docs/authentication.md)
 
-### 3. Unified Login konfigurieren (empfohlen)
+### 3. Unified Login konfigurieren
 
 1. **Use cases** -> **Manage messaging & content on Instagram** -> **Customize** -> **API setup with Unified login**
 2. **Create new configuration**:
@@ -44,7 +43,7 @@ Falls nach dem Login kein Instagram Account gefunden wird: `business_management`
 ### 4. instacli auth setup
 
 ```bash
-instacli auth setup --login unified
+instacli auth setup
 ```
 
 1. Meta App ID, App Secret und Configuration ID eingeben
@@ -53,19 +52,20 @@ instacli auth setup --login unified
 4. Die komplette URL (oder nur den `code`) einfügen
 5. instacli tauscht den Code gegen einen System-User-Token, wählt den Instagram Account und speichert alles
 
-Alternativ einen im Dashboard generierten Token setzen: `instacli auth token --login unified`
+Alternativ einen im Dashboard generierten Token setzen: `instacli auth token`
 
-### 5. (Legacy) Instagram Login
+### 5. Legacy: Instagram Login (`--legacy`)
 
 Nur für bestehende Apps mit **"Instagram API with Instagram Login"**: Instagram App ID/Secret unter
 **API setup with Instagram Login**, Redirect URI `https://localhost`, Permissions `instagram_business_basic`,
 `instagram_business_content_publish`, `instagram_business_manage_messages`. Dann:
 
 ```bash
-instacli auth setup --login instagram
+instacli auth setup --legacy
+instacli auth token --legacy   # manuell generierter Instagram-Login-Token
 ```
 
-Bestehende Configs ohne `login_type` laufen automatisch als Instagram Login weiter.
+Bestehende Configs ohne `login_type` laufen weiter als Instagram Login, bis `instacli auth setup` erneut ausgeführt wird.
 
 ### 6. Testen
 
@@ -124,13 +124,13 @@ instacli me --json
 
 ```bash
 instacli auth status       # Login-Typ und Token-Status prüfen
-instacli auth refresh      # Token erneuern (nur Instagram Login, alle 60 Tage)
+instacli auth refresh      # Token erneuern (nur --legacy Instagram Login, alle 60 Tage)
 ```
 
 ## Token Refresh
 
 **Unified Login:** Der System-User-Token läuft mit Ablauf "Never" nicht ab. Bei einer Configuration mit Ablauf
-muss `instacli auth setup --login unified` vor Ablauf erneut ausgeführt werden.
+muss `instacli auth setup` vor Ablauf erneut ausgeführt werden.
 
 **Instagram Login (legacy):** Long-lived Tokens laufen nach **60 Tagen** ab. Erneuere sie rechtzeitig:
 

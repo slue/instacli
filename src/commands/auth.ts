@@ -25,23 +25,13 @@ const INSTAGRAM_LOGIN_SCOPES =
   "instagram_business_basic,instagram_business_content_publish";
 
 interface SetupOptions {
-  login?: string;
+  legacy?: boolean;
   redirectUri?: string;
 }
 
-function resolveLoginType(value: string | undefined): LoginType {
-  if (value === "unified" || value === "instagram") return value;
-  if (value) error(`Unknown login type "${value}". Use "unified" or "instagram".`);
-
-  const choice = readlineSync.keyInSelect(
-    [
-      "Unified Login (recommended, required for new Meta apps)",
-      "Instagram Login (legacy, only for existing apps)",
-    ],
-    "Which Instagram API setup does your Meta app use?",
-    { cancel: false }
-  );
-  return choice === 1 ? "instagram" : "unified";
+/** Unified Login is the default; --legacy selects Instagram Login (instagram.com OAuth). */
+function resolveLoginType(opts: SetupOptions): LoginType {
+  return opts.legacy ? "instagram" : "unified";
 }
 
 /** Accepts either the bare code or the full redirect URL (https://localhost/?code=...#_). */
@@ -296,11 +286,11 @@ export function registerAuthCommands(program: Command): void {
 
   auth
     .command("setup")
-    .description("Interactive guided authentication setup")
-    .option("--login <type>", "Login type: unified (recommended) or instagram (legacy)")
+    .description("Interactive guided authentication setup (Unified Login)")
+    .option("--legacy", "Use the legacy Instagram Login instead of Unified Login")
     .option("--redirect-uri <uri>", "OAuth redirect URI configured in the Meta app", DEFAULT_REDIRECT_URI)
     .action(async (opts: SetupOptions) => {
-      const loginType = resolveLoginType(opts.login);
+      const loginType = resolveLoginType(opts);
       if (loginType === "unified") {
         await setupUnified(opts);
       } else {
@@ -310,11 +300,11 @@ export function registerAuthCommands(program: Command): void {
 
   auth
     .command("token")
-    .description("Manually set a token (from Meta Developer Console)")
-    .option("--login <type>", "Login type: unified (recommended) or instagram (legacy)")
+    .description("Manually set a token generated in the Meta App Dashboard (Unified Login)")
+    .option("--legacy", "Use the legacy Instagram Login instead of Unified Login")
     .action(async (opts: SetupOptions) => {
       console.log(chalk.bold("\n🔑 Manual Token Setup\n"));
-      const loginType = resolveLoginType(opts.login);
+      const loginType = resolveLoginType(opts);
       if (loginType === "unified") {
         await manualTokenUnified();
       } else {
@@ -354,7 +344,7 @@ export function registerAuthCommands(program: Command): void {
         if (loginType === "instagram") {
           console.log(
             chalk.yellow(
-              "\n  Instagram Login is legacy at Meta. Consider `instacli auth setup --login unified`."
+              "\n  Instagram Login is legacy at Meta. Re-run `instacli auth setup` to switch to Unified Login."
             )
           );
         }
@@ -380,7 +370,7 @@ export function registerAuthCommands(program: Command): void {
           return;
         }
         error(
-          "Unified Login tokens can't be refreshed by instacli. Re-run `instacli auth setup --login unified` before the token expires."
+          "Unified Login tokens can't be refreshed by instacli. Re-run `instacli auth setup` before the token expires."
         );
       }
 

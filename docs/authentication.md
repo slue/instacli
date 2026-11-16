@@ -1,9 +1,9 @@
 # Authentication: Unified Login vs. Instagram Login
 
-instacli supports both Instagram API setups Meta currently offers for publishing as a
-professional account. The login type is stored as `login_type` in `~/.instacli/config.json`.
+instacli uses **Unified Login by default**. The legacy Instagram Login is only available via
+`--legacy`. The login type is stored as `login_type` in `~/.instacli/config.json`.
 
-| | Unified Login (`unified`, recommended) | Instagram Login (`instagram`, legacy) |
+| | Unified Login (`unified`, default) | Instagram Login (`instagram`, `--legacy`) |
 |---|---|---|
 | Meta status | Recommended; only setup that gets new features; the only one offered to **new** apps | Labelled legacy; no retirement date announced (as of 2026-11) |
 | Login dialog | `https://www.facebook.com/dialog/oauth?client_id&config_id&redirect_uri&response_type=code` | `https://www.instagram.com/oauth/authorize?...&scope=instagram_business_*` |
@@ -21,9 +21,9 @@ professional account. The login type is stored as `login_type` in `~/.instacli/c
 
 ## How instacli maps this
 
-- `instacli auth setup [--login unified|instagram] [--redirect-uri <uri>]` — interactive flow.
-  Without `--login` it asks. You may paste the full redirect URL; the `code` is extracted.
-- `instacli auth token [--login unified|instagram]` — paste a token generated in the dashboard.
+- `instacli auth setup [--legacy] [--redirect-uri <uri>]` — interactive flow, Unified Login unless
+  `--legacy` is given. You may paste the full redirect URL; the `code` is extracted.
+- `instacli auth token [--legacy]` — paste a token generated in the dashboard (Unified Login unless `--legacy`).
 - Unified: after the token exchange instacli lists `/me/assigned_instagram_accounts` and lets you
   pick one; the `client_business_id` (from `/me?fields=client_business_id`) and `config_id` are stored too.
 - All API calls (`post`, `story`, `media`, `dm`, `me`) pick the host by `login_type`.
@@ -31,7 +31,8 @@ professional account. The login type is stored as `login_type` in `~/.instacli/c
 - `auth refresh` only applies to Instagram Login. Unified tokens that never expire need no refresh;
   expiring ones require re-running `auth setup` (the SUAT management API needs `business_management`
   and is not implemented).
-- Configs written before this change have no `login_type` and keep working as `instagram`.
+- Configs written before this change have no `login_type` and keep working as `instagram` until
+  `instacli auth setup` is re-run; `auth status` shows a hint to switch.
 
 ## Meta App Dashboard setup (Unified Login)
 
