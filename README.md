@@ -18,60 +18,56 @@ Dein Instagram Account muss ein **Business** oder **Creator** Account sein.
 
 1. Gehe zu **https://developers.facebook.com/**
 2. Oben rechts: **My Apps** -> **Create App**
-3. **Use cases**: Wähle **"Other"** -> **Next**
-4. **App type**: Wähle **"Business"** -> **Next**
-5. **App name**: z.B. `instacli` oder `Instagram CLI`
-6. **App contact email**: Deine Email
-7. **Create App** klicken
+3. **Use case**: **"Manage messaging & content on Instagram"**
+4. App einem **Business Portfolio** zuordnen (Pflicht für Unified Login)
+5. **App name**: z.B. `instacli` -> **Create App**
 
-### 3. Instagram API aktivieren
+> instacli nutzt standardmäßig Metas **Unified Login**. Das alte **Instagram Login** ist bei Meta "legacy"
+> und nur noch über `--legacy` erreichbar. Details & Vergleich: [docs/authentication.md](docs/authentication.md)
 
-1. In der App: Linke Sidebar -> **Add Product**
-2. Suche **"Instagram"** -> **Set Up** klicken
-3. Wähle **"Instagram API with Instagram Login"**
-4. Unter **Settings** (links): **Instagram API with Instagram Login** -> **Permissions**
-5. Folgende Permissions hinzufügen:
-   - `instagram_business_basic` (sollte schon aktiv sein)
-   - `instagram_business_content_publish`
-   - `instagram_business_manage_messages`
+### 3. Unified Login konfigurieren
 
-### 4. Redirect URI konfigurieren
+1. **Use cases** -> **Manage messaging & content on Instagram** -> **Customize** -> **API setup with Unified login**
+2. **Create new configuration**:
+   - Permissions: `instagram_basic`, `instagram_content_publish` (für DMs zusätzlich `instagram_manage_messages`)
+   - Token-Ablauf: **Never**
+3. **Redirect URL**: `https://localhost/` -> **Save**
+4. **Configuration ID** notieren
+5. **App settings -> Basic**: **Meta App ID** und **App Secret** notieren (NICHT die Instagram App ID)
+6. Im Dev Mode: Deinen Instagram Account unter **Generate access tokens** als Instagram Tester hinzufügen und
+   die Einladung auf instagram.com annehmen (Settings -> Website permissions -> Apps and websites -> Tester Invites)
 
-1. In der App: **Instagram API with Instagram Login** -> **Settings**
-2. Unter **OAuth Settings**:
-   - **Valid OAuth Redirect URIs**: `https://localhost`
-   - **Deauthorize Callback URL**: (leer lassen)
-   - **Data Deletion Request URL**: (leer lassen)
-3. **Save Changes**
+Falls nach dem Login kein Instagram Account gefunden wird: `business_management` zur Configuration hinzufügen
+(siehe [docs/authentication.md](docs/authentication.md)).
 
-### 5. Instagram App ID und Secret notieren
-
-**WICHTIG:** Du brauchst die **Instagram App ID**, NICHT die Facebook App ID!
-
-1. In der App: **Instagram API with Instagram Login** -> **API setup with Instagram Login**
-2. Dort findest du:
-   - **Instagram App ID** (unterscheidet sich von der Facebook App ID!)
-   - **Instagram App Secret**
-3. Kopiere beide Werte
-
-### 6. instacli auth setup
+### 4. instacli auth setup
 
 ```bash
 instacli auth setup
 ```
 
-Das Tool führt dich durch den Rest:
-1. App ID eingeben
-2. App Secret eingeben
-3. Eine URL wird generiert - diese im Browser öffnen
-4. Instagram Login + Autorisierung durchführen
-5. Du wirst zu `https://localhost?code=XXXX#_` weitergeleitet
-6. Den `code` Parameter aus der URL kopieren und einfügen
-7. Token wird automatisch ausgetauscht und gespeichert
+1. Meta App ID, App Secret und Configuration ID eingeben
+2. Die generierte URL im Browser öffnen, mit Instagram oder Facebook einloggen, Business Portfolio + Instagram Account wählen
+3. Du wirst zu `https://localhost/?code=XXXX` weitergeleitet (Browser-Fehler ist normal)
+4. Die komplette URL (oder nur den `code`) einfügen
+5. instacli tauscht den Code gegen einen System-User-Token, wählt den Instagram Account und speichert alles
 
-**Hinweis:** Die Weiterleitung zu `https://localhost` wird einen Fehler im Browser zeigen (ERR_CONNECTION_REFUSED) - das ist normal! Du brauchst nur den `code=...` Parameter aus der URL-Leiste.
+Alternativ einen im Dashboard generierten Token setzen: `instacli auth token`
 
-### 7. Testen
+### 5. Legacy: Instagram Login (`--legacy`)
+
+Nur für bestehende Apps mit **"Instagram API with Instagram Login"**: Instagram App ID/Secret unter
+**API setup with Instagram Login**, Redirect URI `https://localhost`, Permissions `instagram_business_basic`,
+`instagram_business_content_publish`, `instagram_business_manage_messages`. Dann:
+
+```bash
+instacli auth setup --legacy
+instacli auth token --legacy   # manuell generierter Instagram-Login-Token
+```
+
+Bestehende Configs ohne `login_type` laufen weiter als Instagram Login, bis `instacli auth setup` erneut ausgeführt wird.
+
+### 6. Testen
 
 ```bash
 # Account-Info anzeigen
@@ -127,13 +123,16 @@ instacli me --json
 ### Auth
 
 ```bash
-instacli auth status       # Token-Status prüfen
-instacli auth refresh      # Token erneuern (alle 60 Tage)
+instacli auth status       # Login-Typ und Token-Status prüfen
+instacli auth refresh      # Token erneuern (nur --legacy Instagram Login, alle 60 Tage)
 ```
 
 ## Token Refresh
 
-Long-lived Tokens laufen nach **60 Tagen** ab. Erneuere sie rechtzeitig:
+**Unified Login:** Der System-User-Token läuft mit Ablauf "Never" nicht ab. Bei einer Configuration mit Ablauf
+muss `instacli auth setup` vor Ablauf erneut ausgeführt werden.
+
+**Instagram Login (legacy):** Long-lived Tokens laufen nach **60 Tagen** ab. Erneuere sie rechtzeitig:
 
 ```bash
 instacli auth refresh
@@ -143,7 +142,7 @@ Tipp: Einen Cron-Job einrichten der alle 50 Tage `instacli auth refresh` aufruft
 
 ## Technische Details
 
-- Nutzt die **Instagram Graph API v22.0** (offiziell, Meta-konform)
+- Unified Login: **graph.facebook.com v27.0**; Instagram Login (legacy): **graph.instagram.com v22.0**
 - Lokale Dateien werden temporär auf **file.io** hochgeladen (auto-expire nach Download)
 - Config wird in `~/.instacli/config.json` gespeichert
 - Video-Uploads: Container-Status wird gepollt bis FINISHED (max 60s)
@@ -162,4 +161,4 @@ Tipp: Einen Cron-Job einrichten der alle 50 Tage `instacli auth refresh` aufruft
 
 - Node.js v20+
 - Instagram Business oder Creator Account
-- Meta Developer App mit `instagram_business_content_publish` Permission
+- Meta Developer App (im Business Portfolio) mit `instagram_content_publish` (Unified) bzw. `instagram_business_content_publish` (legacy)
