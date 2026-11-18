@@ -54,6 +54,23 @@ instacli auth setup
 
 Alternativ einen im Dashboard generierten Token setzen: `instacli auth token`
 
+#### Ohne Terminal (Agenten, Skripte)
+
+Ohne TTY fragt instacli nichts nach, sondern erwartet alles als Flag (oder `INSTACLI_APP_ID`,
+`INSTACLI_APP_SECRET`, `INSTACLI_CONFIG_ID` als Umgebungsvariablen). Fehlt etwas, bricht es mit dem
+Namen des fehlenden Flags ab, statt zu hängen.
+
+```bash
+instacli auth url --app-id <APP_ID> --config-id <CONFIG_ID>          # 1. Login-URL ausgeben
+INSTACLI_APP_SECRET=<SECRET> instacli auth setup \
+  --app-id <APP_ID> --config-id <CONFIG_ID> \
+  --code 'https://localhost/?code=...#_' [--account <username|id>]    # 2. Redirect-URL einlösen
+# oder mit einem Dashboard-Token:
+INSTACLI_APP_SECRET=<SECRET> instacli auth token --app-id <APP_ID> --token <TOKEN> [--account <username|id>]
+```
+
+`--account` braucht es nur, wenn dem Token mehrere Instagram-Accounts zugewiesen sind.
+
 ### 5. Legacy: Instagram Login (`--legacy`)
 
 Nur für bestehende Apps mit **"Instagram API with Instagram Login"**: Instagram App ID/Secret unter

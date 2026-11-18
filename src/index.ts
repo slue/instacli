@@ -13,7 +13,7 @@ const program = new Command();
 program
   .name("instacli")
   .description("Instagram CLI using the Meta Graph API")
-  .version("1.0.0");
+  .version("1.1.0");
 
 registerAuthCommands(program);
 registerPostCommands(program);
